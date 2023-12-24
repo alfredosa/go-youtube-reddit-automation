@@ -2,7 +2,6 @@ package reddit
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
@@ -21,12 +20,12 @@ func PullLatestNews(config config.Config) ([]*reddit.Post, error) {
 		return nil, err
 	}
 
-	for _, post := range posts {
-		fmt.Printf("post Title: %s\n", post.Title)
-		fmt.Printf("post URL: %s\n", post.URL)
-		fmt.Printf("post BODY: %s\n", post.Body)
-		fmt.Printf("\n")
-	}
+	// for _, post := range posts {
+	// 	fmt.Printf("post Title: %s\n", post.Title)
+	// 	fmt.Printf("post URL: %s\n", post.URL)
+	// 	fmt.Printf("post BODY: %s\n", post.Body)
+	// 	fmt.Printf("\n")
+	// }
 
 	println("After from response: %s", resp.After)
 	return posts, nil

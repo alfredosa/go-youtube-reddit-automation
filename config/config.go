@@ -9,13 +9,6 @@ type Config struct {
 	Background struct {
 		Path string
 	}
-	RedditCredential struct {
-		Client_ID     string
-		Client_Secret string
-		UserAgent     string
-		Username      string
-		Passkey       string
-	}
 	YoutubeCredential struct {
 		Client_ID     string
 		Client_Secret string
