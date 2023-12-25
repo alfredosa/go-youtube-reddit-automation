@@ -2,8 +2,12 @@ package reddit
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"os"
 
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
+	"github.com/alfredosa/go-youtube-reddit-automation/tts"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
@@ -20,13 +24,24 @@ func PullLatestNews(config config.Config) ([]*reddit.Post, error) {
 		return nil, err
 	}
 
-	// for _, post := range posts {
-	// 	fmt.Printf("post Title: %s\n", post.Title)
-	// 	fmt.Printf("post URL: %s\n", post.URL)
-	// 	fmt.Printf("post BODY: %s\n", post.Body)
-	// 	fmt.Printf("\n")
-	// }
+	tts.CreateTTSFiles(posts, config)
 
-	println("After from response: %s", resp.After)
+	fmt.Printf("resp: %s", resp.After)
+
+	save_posts_to_json(posts)
+
 	return posts, nil
+}
+
+func save_posts_to_json(posts []*reddit.Post) {
+
+	for _, post := range posts {
+		filename := "data/" + post.ID + ".json"
+		fmt.Printf("filename: %s", filename)
+		json_file, err := json.Marshal(posts)
+		if err != nil {
+			panic(err)
+		}
+		os.WriteFile(filename, json_file, 0644)
+	}
 }
