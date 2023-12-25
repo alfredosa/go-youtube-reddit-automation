@@ -52,8 +52,10 @@ func getMP3Length(filename string) (int, error) {
 		fmt.Println("Error creating decoder: ", err)
 		return 0, err
 	}
-
+	// 4 bytes per sample
 	samples := mp3Decoder.Length() / 4
+
+	// Samples divided by sample rate gives length in seconds
 	audioLength := samples / int64(mp3Decoder.SampleRate())
 	log.Println("Length in seconds: ", audioLength)
 
