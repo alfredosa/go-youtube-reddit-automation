@@ -5,3 +5,5 @@ config.toml
 
 audio/*
 data/*
+screenshots/*.png
+```

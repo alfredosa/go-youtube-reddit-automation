@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
-	"github.com/alfredosa/go-youtube-reddit-automation/tts"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
@@ -24,10 +23,8 @@ func PullLatestNews(config config.Config) ([]*reddit.Post, error) {
 		return nil, err
 	}
 
-	tts.CreateTTSFiles(posts, config)
-
+	CreateTTSAndSSFiles(posts, config)
 	fmt.Printf("resp: %s", resp.After)
-
 	save_posts_to_json(posts)
 
 	return posts, nil
