@@ -3,7 +3,8 @@
 config.toml
 *.env
 
-audio/*
-data/*
+audio/*.mp3
+data/*.json
 screenshots/*.png
+video/*.mp4
 ```
