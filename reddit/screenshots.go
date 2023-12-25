@@ -2,101 +2,86 @@ package reddit
 
 import (
 	"fmt"
-	"image"
 	_ "image/png"
+	"io"
 	"log"
 	"os"
 
-	"github.com/playwright-community/playwright-go"
+	"encoding/json"
+	"net/http"
+	"net/url"
+
+	"github.com/alfredosa/go-youtube-reddit-automation/config"
 )
 
-// TakeScreenShot takes a screenshot of a given URL and saves it with the provided ID.
-func TakeScreenShot(url string, id string) {
-	pw, err := playwright.Run()
+// TakeScreenShot takes a screenshot of the first 2 images from Google search results based on the title and saves them as id_(number).png.
+func TakeScreenShot(title string, id string, config config.Config) {
+	query := url.QueryEscape(title)
+	url := "https://www.googleapis.com/customsearch/v1?key=" + config.Goggle.API_Key + "&cx=" + config.Goggle.CX + "&q=" + query + "&searchType=image&num=1"
+
+	resp, err := http.Get(url)
+
 	if err != nil {
-		log.Fatalf("could not launch playwright: %v", err)
+		log.Fatalf("could not make API request: %v", err)
 	}
-	defer pw.Stop()
+	defer resp.Body.Close()
 
-	browser, err := pw.Chromium.Launch()
+	var data struct {
+		Items []struct {
+			Link string `json:"link"`
+		} `json:"items"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
-		log.Fatalf("could not launch Chromium: %v", err)
+		log.Fatalf("could not decode API response: %v", err)
 	}
 
-	page, err := browser.NewPage()
-	if err != nil {
-		log.Fatalf("could not create page: %v", err)
-	}
-	page.SetViewportSize(1200, 1080)
-
-	if _, err = page.Goto(url, playwright.PageGotoOptions{
-		WaitUntil: playwright.WaitUntilStateDomcontentloaded,
-	}); err != nil {
-		log.Fatalf("could not goto: %v", err)
-	}
-
-	_, err = page.Evaluate("window.scrollBy(0, 150)")
-	if err != nil {
-		log.Fatalf("could not scroll: %v", err)
-	}
-
-	screenshot_title := fmt.Sprintf("screenshots/%s.png", id)
-	if _, err = page.Screenshot(playwright.PageScreenshotOptions{
-		Path: playwright.String(screenshot_title),
-	}); err != nil {
-		log.Fatalf("could not create screenshot: %v", err)
-	}
-
-	if err = browser.Close(); err != nil {
-		log.Fatalf("could not close browser: %v", err)
-	}
-
-	if err = pw.Stop(); err != nil {
-		log.Fatalf("could not stop Playwright: %v", err)
-	}
-
-	uniform, err := isUniformColor(screenshot_title)
-	if err != nil {
-		log.Fatalf("could not check if screenshot is uniform color: %v", err)
-	}
-	if uniform {
-		log.Printf("Screenshot %s is uniform color, deleting", screenshot_title)
-		if err = os.Remove(screenshot_title); err != nil {
-			log.Fatalf("could not delete screenshot: %v", err)
+	for i, item := range data.Items {
+		imgPath := "screenshots/" + id + "_" + fmt.Sprint(i)
+		extension, err := DownloadFile(imgPath, item.Link)
+		if err != nil {
+			log.Fatalf("could not download image: %v", err)
 		}
+		log.Printf("file %s downloaded with extension %s", imgPath, extension)
 	}
 }
 
-func SetupPW() {
-	err := playwright.Install()
+func DownloadFile(filepath string, url string) (string, error) {
+	// Get the data
+	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatalf("could not install playwright: %v", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Get the Content-Type header of the HTTP response
+	contentType := resp.Header.Get("Content-Type")
+
+	// Determine the file extension based on the Content-Type header
+	var extension string
+	switch contentType {
+	case "image/jpeg":
+		extension = ".jpg"
+	case "image/png":
+		extension = ".png"
+	case "image/gif":
+		extension = ".gif"
+	default:
+		return "", fmt.Errorf("unsupported content type: %s", contentType)
 	}
 
-}
+	log.Println("Content-Type:", contentType)
+	// Append the file extension to the filepath
+	filepath += extension
 
-func isUniformColor(imgPath string) (bool, error) {
-	file, err := os.Open(imgPath)
+	// Create the file
+	out, err := os.Create(filepath)
 	if err != nil {
-		return false, err
+		return extension, err
 	}
-	defer file.Close()
+	defer out.Close()
 
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return false, err
-	}
-
-	bounds := img.Bounds()
-	firstPixel := img.At(bounds.Min.X, bounds.Min.Y)
-
-	for x := bounds.Min.X; x < bounds.Max.X; x++ {
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			if img.At(x, y) != firstPixel {
-				return false, nil
-			}
-		}
-	}
-
-	return true, nil
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	return extension, err
 }

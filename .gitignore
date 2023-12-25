@@ -6,5 +6,6 @@ config.toml
 audio/*.mp3
 data/*.json
 screenshots/*.png
+screenshots/*.jpg
 video/*.mp4
 ```

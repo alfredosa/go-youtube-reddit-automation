@@ -3,6 +3,10 @@ package config
 import "time"
 
 type Config struct {
+	Goggle struct {
+		API_Key string
+		CX      string
+	}
 	Directory struct {
 		Path string
 	}

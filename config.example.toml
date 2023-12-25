@@ -1,3 +1,6 @@
+[Goggle]
+api_key='hehekey'
+
 [Directory]
 # absolute path to where this project is cloned or downloaded e.g: Desktop/YoutubeAutomation-Reddit
 path='something'

@@ -29,10 +29,9 @@ func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) {
 				log.Fatal(err)
 			}
 
+			TakeScreenShot(post.Title, post.ID, config)
 			log.Printf("Created audio file %s", speech)
 		}(post)
-
-		TakeScreenShot(post.URL, post.ID)
 
 	}
 
