@@ -48,8 +48,12 @@ func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) {
 
 	wg.Wait()
 
-	log.Printf("Finished generating audio files, now concatenating them")
-	ConcatAllAudiosWithPause()
+	if utils.CheckFileExists("final_cut", "audio/result") {
+		log.Println("Final cut already exists, skipping")
+	} else {
+		log.Printf("Finished generating audio files, now concatenating them")
+		ConcatAllAudiosWithPause()
+	}
 }
 
 func GetMP3Length(filename string) (int, error) {
@@ -93,7 +97,7 @@ func ConvertSampleRate(audioPath string, sampleRate int) error {
 }
 
 func ConcatAllAudiosWithPause() {
-	filePath := path.Join("video", "news_intro.mp3")
+	filePath := path.Join("studio", "news_intro.mp3")
 	segment, _ := godub.NewLoader().Load(filePath)
 
 	for _, audio := range utils.GetAudios() {
@@ -112,7 +116,7 @@ func ConcatAllAudiosWithPause() {
 		}
 
 		log.Printf("Concatenating 1 second silence")
-		segmentSilence, err := godub.NewLoader().Load("video/1sec_silence.mp3")
+		segmentSilence, err := godub.NewLoader().Load("studio/1sec_silence.mp3")
 
 		if err != nil {
 			log.Fatal(err)
