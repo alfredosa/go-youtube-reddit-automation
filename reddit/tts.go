@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
+	"github.com/alfredosa/go-youtube-reddit-automation/utils"
 	"github.com/hajimehoshi/go-mp3"
 	htgotts "github.com/hegedustibor/htgo-tts"
 	rdt "github.com/vartanbeno/go-reddit/v2/reddit"
@@ -23,6 +24,11 @@ func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) {
 
 		go func(post *rdt.Post) {
 			defer wg.Done()
+
+			if utils.CheckFileExists(post.ID, "audio") {
+				return
+			}
+
 			speech, err := speech.CreateSpeechFile(post.Title, post.ID)
 
 			if err != nil {

@@ -12,12 +12,18 @@ import (
 	"net/url"
 
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
+	"github.com/alfredosa/go-youtube-reddit-automation/utils"
 )
 
 // TakeScreenShot takes a screenshot of the first 2 images from Google search results based on the title and saves them as id_(number).png.
 func TakeScreenShot(title string, id string, config config.Config) {
 	query := url.QueryEscape(title)
-	url := "https://www.googleapis.com/customsearch/v1?key=" + config.Goggle.API_Key + "&cx=" + config.Goggle.CX + "&q=" + query + "&searchType=image&num=1"
+	// search for files, if at least one id exists, skip
+	if utils.CheckFileExists(id, "screenshots") {
+		log.Printf("file %s already exists", id)
+		return
+	}
+	url := "https://www.googleapis.com/customsearch/v1?key=" + config.Goggle.API_Key + "&cx=" + config.Goggle.CX + "&q=" + query + "&searchType=image&num=2"
 
 	resp, err := http.Get(url)
 
@@ -38,9 +44,16 @@ func TakeScreenShot(title string, id string, config config.Config) {
 
 	for i, item := range data.Items {
 		imgPath := "screenshots/" + id + "_" + fmt.Sprint(i)
+
+		/// check if file exists
+		if _, err := os.Stat("sample.txt"); err == nil {
+			log.Printf("file %s already exists", imgPath)
+			continue
+		}
+
 		extension, err := DownloadFile(imgPath, item.Link)
 		if err != nil {
-			log.Fatalf("could not download image: %v", err)
+			log.Printf("could not download image: %v", err)
 		}
 		log.Printf("file %s downloaded with extension %s", imgPath, extension)
 	}
