@@ -4,8 +4,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"path"
+	"strconv"
 	"sync"
 
+	"github.com/Vernacular-ai/godub"
+	"github.com/Vernacular-ai/godub/converter"
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
 	"github.com/alfredosa/go-youtube-reddit-automation/utils"
 	"github.com/hajimehoshi/go-mp3"
@@ -42,9 +47,12 @@ func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) {
 	}
 
 	wg.Wait()
+
+	log.Printf("Finished generating audio files, now concatenating them")
+	ConcatAllAudiosWithPause()
 }
 
-func getMP3Length(filename string) (int, error) {
+func GetMP3Length(filename string) (int, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Error opening file: ", err)
@@ -65,4 +73,64 @@ func getMP3Length(filename string) (int, error) {
 	log.Println("Length in seconds: ", audioLength)
 
 	return int(audioLength), nil
+}
+
+func ConvertSampleRate(audioPath string, sampleRate int) error {
+	outputPath := audioPath + ".converted.mp3"
+	cmd := exec.Command("ffmpeg", "-i", audioPath, "-ar", strconv.Itoa(sampleRate), outputPath)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	// Replace the original file with the converted one
+	err = os.Rename(outputPath, audioPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ConcatAllAudiosWithPause() {
+	filePath := path.Join("video", "news_intro.mp3")
+	segment, _ := godub.NewLoader().Load(filePath)
+
+	for _, audio := range utils.GetAudios() {
+		// Convert the sample rate of the audio file to 24000 Hz
+		log.Printf("Converting sample rate of %s to 44100 Hz", audio)
+		err := ConvertSampleRate(audio, 44100)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Printf("Concatenating %s", audio)
+		segment2, err := godub.NewLoader().Load(audio)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Printf("Concatenating 1 second silence")
+		segmentSilence, err := godub.NewLoader().Load("video/1sec_silence.mp3")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Printf("Concatenating %s", audio)
+		segment, err = segment.Append(segment2, segmentSilence)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	log.Printf("Concatenating %s", filePath)
+	newPth := path.Join("audio", "result", "final_cut.mp3")
+	err := godub.NewExporter(newPth).WithDstFormat("mp3").WithBitRate(converter.MP3BitRatePerfect).Export(segment)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }

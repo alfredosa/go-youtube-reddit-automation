@@ -10,6 +10,8 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
 	"github.com/alfredosa/go-youtube-reddit-automation/reddit"
+	"github.com/alfredosa/go-youtube-reddit-automation/utils"
+	"github.com/alfredosa/go-youtube-reddit-automation/video"
 )
 
 func main() {
@@ -25,9 +27,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("Found %d posts", len(posts))
-
-	log.Printf("Finished generating audio files")
+	if utils.CheckFileExists("final_cut", "audio/result") {
+		video.CreateVideo(posts, config)
+	} else {
+		println("file does not exist")
+	}
 	// log.Printf("Cleaning up audio files")
 	// cleanUp()
 

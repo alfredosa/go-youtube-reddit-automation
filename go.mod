@@ -10,10 +10,13 @@ require (
 )
 
 require (
+	github.com/Vernacular-ai/godub v0.1.6 // indirect
 	github.com/golang/protobuf v1.2.0 // indirect
+	github.com/google/go-cmp v0.5.0 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/hajimehoshi/oto/v2 v2.3.1 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
+	github.com/tink-ab/tempfile v0.0.0-20180226111222-33beb0518f1a // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	golang.org/x/sys v0.13.0 // indirect
