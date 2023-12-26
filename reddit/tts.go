@@ -74,7 +74,6 @@ func GetMP3Length(filename string) (int, error) {
 
 	// Samples divided by sample rate gives length in seconds
 	audioLength := samples / int64(mp3Decoder.SampleRate())
-	log.Println("Length in seconds: ", audioLength)
 
 	return int(audioLength), nil
 }
@@ -102,20 +101,17 @@ func ConcatAllAudiosWithPause() {
 
 	for _, audio := range utils.GetAudios() {
 		// Convert the sample rate of the audio file to 24000 Hz
-		log.Printf("Converting sample rate of %s to 44100 Hz", audio)
 		err := ConvertSampleRate(audio, 44100)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		log.Printf("Concatenating %s", audio)
 		segment2, err := godub.NewLoader().Load(audio)
 
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		log.Printf("Concatenating 1 second silence")
 		segmentSilence, err := godub.NewLoader().Load("studio/1sec_silence.mp3")
 
 		if err != nil {

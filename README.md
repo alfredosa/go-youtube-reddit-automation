@@ -2,7 +2,8 @@
 
 - [ ] Add a `LICENSE` file
 - [ ] Add a screenshot taker from reddit
-- [ ] 
+- [ ] Image credits from google images (url?)
+
 
 ## Dependencies
 

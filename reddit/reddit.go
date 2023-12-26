@@ -34,7 +34,6 @@ func save_posts_to_json(posts []*reddit.Post) {
 
 	for _, post := range posts {
 		filename := "data/" + post.ID + ".json"
-		fmt.Printf("filename: %s", filename)
 		json_file, err := json.Marshal(posts)
 		if err != nil {
 			panic(err)

@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+// check if file exists given a substring
+// example:
+// CheckFileExists("test", "audio")
+// will return true if there is a file in the audio folder
+// that contains the substring "test"
 func CheckFileExists(substr string, dir string) bool {
 	files, err := os.ReadDir(dir)
 	if err != nil {
@@ -20,6 +25,8 @@ func CheckFileExists(substr string, dir string) bool {
 	return false
 }
 
+// GetAudios returns a slice of strings with the names of all the mp3 files
+// in the "audio" folder
 func GetAudios() []string {
 	var audios []string
 	files, err := os.ReadDir("audio")
