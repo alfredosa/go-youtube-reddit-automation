@@ -99,6 +99,17 @@ func ConcatAllAudiosWithPause() {
 	filePath := path.Join("studio", "news_intro.mp3")
 	segment, _ := godub.NewLoader().Load(filePath)
 
+	// append news transition to news intro
+	segment2, err := godub.NewLoader().Load("studio/news_transition.mp3")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	segment, err = segment.Append(segment2)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for _, audio := range utils.GetAudios() {
 		// Convert the sample rate of the audio file to 24000 Hz
 		err := ConvertSampleRate(audio, 44100)
@@ -112,7 +123,7 @@ func ConcatAllAudiosWithPause() {
 			log.Fatal(err)
 		}
 
-		segmentSilence, err := godub.NewLoader().Load("studio/1sec_silence.mp3")
+		segmentSilence, err := godub.NewLoader().Load("studio/news_transition.mp3")
 
 		if err != nil {
 			log.Fatal(err)
@@ -128,7 +139,7 @@ func ConcatAllAudiosWithPause() {
 
 	log.Printf("Concatenating %s", filePath)
 	newPth := path.Join("audio", "result", "final_cut.mp3")
-	err := godub.NewExporter(newPth).WithDstFormat("mp3").WithBitRate(converter.MP3BitRatePerfect).Export(segment)
+	err = godub.NewExporter(newPth).WithDstFormat("mp3").WithBitRate(converter.MP3BitRatePerfect).Export(segment)
 
 	if err != nil {
 		log.Fatal(err)

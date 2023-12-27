@@ -38,7 +38,7 @@ func CreateVideo(posts []*rdt.Post, config config.Config) {
 			}
 
 			// Create a video with the same duration as the audio
-			CreateVideoWithLength(duration, post.ID)
+			CreateVideoWithLength(duration, post.ID, post.Title)
 		}(post)
 	}
 
@@ -48,12 +48,46 @@ func CreateVideo(posts []*rdt.Post, config config.Config) {
 	preSound := ConcatAllVideos()
 	audio := "audio/result/final_cut.mp3"
 	AddAudioToVideo(preSound, audio, "studio/staging/resultwsound.mp4")
+
+	os.Remove(preSound)
+	CleanUp()
 }
 
-func CreateVideoWithLength(duration int, id string) {
+func CleanUp() {
+	os.Remove("filelist.txt")
+	// remove all files named _enhanced.mp4
+	files, err := os.ReadDir("studio/staging")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var processedFiles []string
+
+	for _, file := range files {
+		if strings.Contains(file.Name(), "_enhanced.mp4") {
+			// add file by id
+			processedFiles = append(processedFiles, strings.Split(file.Name(), "_")[0])
+			os.Remove("studio/staging/" + file.Name())
+		}
+	}
+
+	// create file with all processed files
+	var processedFilesString strings.Builder
+	for _, file := range processedFiles {
+		processedFilesString.WriteString(file + "\n")
+	}
+
+	err = os.WriteFile("processed.txt", []byte(processedFilesString.String()), 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+func CreateVideoWithLength(duration int, id string, title string) {
 	// ffmpeg -ss 160 -i studio/gta4_hd.mp4 -t 126 -vf "scale=-1:1920,crop=1080:1920:(iw-1080)/2:0" studio/staging/output.mp4
 	// execute command
-	actualDruration := duration + 1 // space between videos
+	actualDruration := duration + 2 // space between videos
 
 	// get random start from 100 to 3600
 	randomNumber := rand.Intn(3600-100) + 100
@@ -81,17 +115,47 @@ func CreateVideoWithLength(duration int, id string) {
 
 	if len(images) == 1 {
 		log.Printf("Adding one image to video %s", OutputPath)
-		AddOneImageToVideo(videoPath, images[0], id)
+		AddOneImageToVideo(videoPath, images[0], id, title)
 	}
 	if len(images) == 2 {
 		log.Printf("Adding two images to video %s", OutputPath)
-		AddTwoImagesToVideo(videoPath, images[0], images[1], id)
+		AddTwoImagesToVideo(videoPath, images[0], images[1], id, title)
 	}
 	log.Printf("Finished creating video %s", OutputPath)
 }
 
-func AddOneImageToVideo(videoPath string, imagePath string, id string) {
-	videoPathEnhanced := "studio/staging/" + id + "_enhanced.mp4"
+func CreateNewsBannerAndAdd(title string, videoPath string, id string) {
+	lines := splitIntoLines(title, 64)
+
+	// only add 1 lines max
+	if len(lines) >= 2 {
+		lines = lines[:1]
+	}
+	videoBannerPath := "studio/staging/" + id + "_banner.png"
+
+	const baseBanner = "studio/banners/onestackbanner.png"
+	// create banner with text
+	bannercmd := exec.Command("ffmpeg", "-i", baseBanner, "-vf", "drawtext=fontfile=studio/font/timesnewroman.ttf:text='"+lines[0]+"':x=(w-text_w)*4/10:y=(h-text_h)/2:fontsize=24:fontcolor=black", videoBannerPath)
+	err := bannercmd.Run()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	finalVideoOutputPath := "studio/staging/" + id + "_enhanced.mp4"
+	// add banner to video with ffmpeg
+	cmd := exec.Command("ffmpeg", "-i", videoPath, "-i", videoBannerPath, "-filter_complex", "[1:v]scale=1060:-1,format=rgba,colorchannelmixer=aa=0.9[img2];[0:v][img2]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)*6/7", finalVideoOutputPath)
+	err = cmd.Run()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	os.Remove(videoPath)
+	os.Remove(videoBannerPath)
+}
+
+func AddOneImageToVideo(videoPath string, imagePath string, id string, title string) {
+	videoPathEnhanced := "studio/staging/" + id + "pre_banner_enhanced.mp4"
 	cmd := exec.Command("ffmpeg", "-i", videoPath, "-i", imagePath, "-filter_complex", "[1:v]scale=640:-1,format=rgba,colorchannelmixer=aa=0.9[img1];[0:v][img1]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/4", videoPathEnhanced)
 	err := cmd.Run()
 
@@ -99,9 +163,10 @@ func AddOneImageToVideo(videoPath string, imagePath string, id string) {
 		log.Fatal(err)
 	}
 	os.Remove(videoPath)
+	CreateNewsBannerAndAdd(title, videoPathEnhanced, id)
 }
 
-func AddTwoImagesToVideo(videoPath string, imagePath1 string, imagePath2 string, id string) {
+func AddTwoImagesToVideo(videoPath string, imagePath1 string, imagePath2 string, id string, title string) {
 
 	videoPathEnhanced := "studio/staging/" + id + "pre_enhanced.mp4"
 	cmd := exec.Command("ffmpeg", "-i", videoPath, "-i", imagePath1, "-filter_complex", "[1:v]scale=640:-1,format=rgba,colorchannelmixer=aa=0.9[img1];[0:v][img1]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/4", videoPathEnhanced)
@@ -111,14 +176,15 @@ func AddTwoImagesToVideo(videoPath string, imagePath1 string, imagePath2 string,
 	}
 	os.Remove(videoPath)
 	// secomd cmmand: ffmpeg -i output1.mp4 -i screenshots/18qimw8_1.jpg -filter_complex "[1:v]scale=640:-1,format=rgba,colorchannelmixer=aa=0.9[img2];[0:v][img2]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2" output.mp4
-	finalOutput := "studio/staging/" + id + "_enhanced.mp4"
-	cmd = exec.Command("ffmpeg", "-i", videoPathEnhanced, "-i", imagePath2, "-filter_complex", "[1:v]scale=640:-1,format=rgba,colorchannelmixer=aa=0.9[img2];[0:v][img2]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2", finalOutput)
+	finalOutput := "studio/staging/" + id + "pre_banner_enhanced.mp4"
+	cmd = exec.Command("ffmpeg", "-i", videoPathEnhanced, "-i", imagePath2, "-filter_complex", "[1:v]scale=640:-1,format=rgba,colorchannelmixer=aa=0.9[img2];[0:v][img2]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)*2/3", finalOutput)
 	err = cmd.Run()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 	os.Remove(videoPathEnhanced)
+	CreateNewsBannerAndAdd(title, finalOutput, id)
 }
 
 func GetAllImagesByID(id string) []string {
@@ -178,4 +244,23 @@ func AddAudioToVideo(videoFile string, audioFile string, outputFile string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func splitIntoLines(s string, maxLen int) []string {
+	words := strings.Fields(s)
+	var lines []string
+	var line string
+
+	for _, word := range words {
+		if len(line+" "+word) <= maxLen {
+			line += " " + word
+		} else {
+			lines = append(lines, strings.TrimSpace(line))
+			line = word
+		}
+	}
+
+	lines = append(lines, strings.TrimSpace(line))
+
+	return lines
 }
