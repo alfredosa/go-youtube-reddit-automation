@@ -4,8 +4,6 @@ package main
 
 import (
 	"log"
-	"os"
-	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
@@ -27,33 +25,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if utils.CheckFileExists("final_cut", "audio/result") {
+	if utils.CheckFileExists("final_cut", "audio/result") && !utils.CheckFileExists("resultwsound", "studio/staging") {
 		video.CreateVideo(posts, config)
 	} else {
-		println("file does not exist")
-	}
-	// log.Printf("Cleaning up audio files")
-	// cleanUp()
-
-}
-
-func cleanUp() {
-	dirname := "audio/"
-
-	d, err := os.Open(dirname)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer d.Close()
-
-	files, err := d.Readdir(-1)
-	if err != nil {
-		log.Fatal(err)
+		println("Final Video already exists, skipping video creation")
 	}
 
-	for _, file := range files {
-		if err := os.RemoveAll(filepath.Join(dirname, file.Name())); err != nil {
-			log.Fatal(err)
-		}
-	}
 }

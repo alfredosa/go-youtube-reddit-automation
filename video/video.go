@@ -55,8 +55,8 @@ func CreateVideo(posts []*rdt.Post, config config.Config) {
 
 func CleanUp() {
 	os.Remove("filelist.txt")
-	// remove all files named _enhanced.mp4
-	files, err := os.ReadDir("studio/staging")
+	dir := "studio/staging/"
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func CleanUp() {
 		if strings.Contains(file.Name(), "_enhanced.mp4") {
 			// add file by id
 			processedFiles = append(processedFiles, strings.Split(file.Name(), "_")[0])
-			os.Remove("studio/staging/" + file.Name())
+			os.Remove(dir + file.Name())
 		}
 	}
 
@@ -81,12 +81,14 @@ func CleanUp() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	dirname := "audio/"
+	utils.RemoveFilesWithSubstr(".mp3", dirname)
 
+	dirname = "audio/result/"
+	utils.RemoveFilesWithSubstr(".mp3", dirname)
 }
 
 func CreateVideoWithLength(duration int, id string, title string) {
-	// ffmpeg -ss 160 -i studio/gta4_hd.mp4 -t 126 -vf "scale=-1:1920,crop=1080:1920:(iw-1080)/2:0" studio/staging/output.mp4
-	// execute command
 	actualDruration := duration + 2 // space between videos
 
 	// get random start from 100 to 3600
@@ -175,7 +177,6 @@ func AddTwoImagesToVideo(videoPath string, imagePath1 string, imagePath2 string,
 		log.Fatal(err)
 	}
 	os.Remove(videoPath)
-	// secomd cmmand: ffmpeg -i output1.mp4 -i screenshots/18qimw8_1.jpg -filter_complex "[1:v]scale=640:-1,format=rgba,colorchannelmixer=aa=0.9[img2];[0:v][img2]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2" output.mp4
 	finalOutput := "studio/staging/" + id + "pre_banner_enhanced.mp4"
 	cmd = exec.Command("ffmpeg", "-i", videoPathEnhanced, "-i", imagePath2, "-filter_complex", "[1:v]scale=640:-1,format=rgba,colorchannelmixer=aa=0.9[img2];[0:v][img2]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)*2/3", finalOutput)
 	err = cmd.Run()

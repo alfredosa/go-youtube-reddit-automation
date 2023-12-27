@@ -23,4 +23,5 @@ CREATE TABLE IF NOT EXISTS posts (
     is_self_post BOOLEAN,
     saved BOOLEAN,
     stickied BOOLEAN
+    posted BOOLEAN
 );

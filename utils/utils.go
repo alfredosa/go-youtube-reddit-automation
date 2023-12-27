@@ -41,3 +41,16 @@ func GetAudios() []string {
 	}
 	return audios
 }
+
+func RemoveFilesWithSubstr(substr string, dir string) {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, f := range files {
+		if strings.Contains(f.Name(), substr) {
+			os.Remove(dir + f.Name())
+		}
+	}
+}

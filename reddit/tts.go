@@ -18,32 +18,33 @@ import (
 	rdt "github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
-func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) {
+func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) []*rdt.Post {
+	var processedPosts []*rdt.Post
 	var wg sync.WaitGroup
 
-	log.Printf("Generating audio files with speech %s", config.TextToSpeechSetup.Voice_ID)
 	speech := htgotts.Speech{Folder: "audio", Language: config.TextToSpeechSetup.Voice_ID}
+
+	length := 6
+	maxLength := 55
 
 	for _, post := range posts {
 		wg.Add(1)
 
 		go func(post *rdt.Post) {
 			defer wg.Done()
-
-			if utils.CheckFileExists(post.ID, "audio") {
-				return
-			}
-
-			speech, err := speech.CreateSpeechFile(post.Title, post.ID)
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
 			TakeScreenShot(post.Title, post.ID, config)
-			log.Printf("Created audio file %s", speech)
 		}(post)
 
+		audioLength := CreateAudioFile(post, config, speech)
+		log.Printf("Audio file %s is %d seconds long, total length now: %d", post.ID, audioLength, length+audioLength)
+		if length+audioLength > maxLength {
+			os.Remove("audio/" + post.ID + ".mp3")
+			log.Printf("Audio file %s is too long, skipping and all subsequent posts", post.ID)
+			break
+		} else {
+			length += audioLength
+			processedPosts = append(processedPosts, post)
+		}
 	}
 
 	wg.Wait()
@@ -54,6 +55,32 @@ func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) {
 		log.Printf("Finished generating audio files, now concatenating them")
 		ConcatAllAudiosWithPause()
 	}
+
+	return processedPosts
+}
+
+func CreateAudioFile(post *rdt.Post, config config.Config, speech htgotts.Speech) int {
+	if utils.CheckFileExists(post.ID, "audio") {
+		length, err := GetMP3Length("audio/" + post.ID + ".mp3")
+		if err != nil {
+			log.Fatal(err)
+		}
+		// add 1 second for the pause
+		return length + 1
+	}
+
+	audio, err := speech.CreateSpeechFile(post.Title, post.ID)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	length, err := GetMP3Length(audio)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// add 1 second for the pause
+	return length + 1
 }
 
 func GetMP3Length(filename string) (int, error) {
