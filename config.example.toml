@@ -48,3 +48,6 @@ voice_id='Joanna'
 upload_to_youtube=false
 # how often should the app be run (in seconds) e.g: every 6 hours -> 21600 seconds
 generation_interval=21600
+
+[NewsAPI]
+api_key='something'

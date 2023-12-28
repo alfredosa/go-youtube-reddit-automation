@@ -4,8 +4,9 @@ import (
 	"fmt"
 	_ "image/png"
 	"io"
-	"log"
 	"os"
+
+	"github.com/charmbracelet/log"
 
 	"encoding/json"
 	"net/http"
@@ -20,7 +21,6 @@ func TakeScreenShot(title string, id string, config config.Config) {
 	query := url.QueryEscape(title)
 	// search for files, if at least one id exists, skip
 	if utils.CheckFileExists(id, "screenshots") {
-		log.Printf("file %s already exists", id)
 		return
 	}
 	url := "https://www.googleapis.com/customsearch/v1?key=" + config.Goggle.API_Key + "&cx=" + config.Goggle.CX + "&q=" + query + "&searchType=image&num=2"
@@ -45,17 +45,10 @@ func TakeScreenShot(title string, id string, config config.Config) {
 	for i, item := range data.Items {
 		imgPath := "screenshots/" + id + "_" + fmt.Sprint(i)
 
-		/// check if file exists
-		if _, err := os.Stat("sample.txt"); err == nil {
-			log.Printf("file %s already exists", imgPath)
-			continue
-		}
-
-		extension, err := DownloadFile(imgPath, item.Link)
+		_, err := DownloadFile(imgPath, item.Link)
 		if err != nil {
-			log.Printf("could not download image: %v", err)
+			log.Info("could not download image: %v", err)
 		}
-		log.Printf("file %s downloaded with extension %s", imgPath, extension)
 	}
 }
 
@@ -83,8 +76,6 @@ func DownloadFile(filepath string, url string) (string, error) {
 		return "", fmt.Errorf("unsupported content type: %s", contentType)
 	}
 
-	log.Println("Content-Type:", contentType)
-	// Append the file extension to the filepath
 	filepath += extension
 
 	// Create the file

@@ -1,13 +1,13 @@
 package reddit
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path"
 	"strconv"
 	"sync"
+
+	"github.com/charmbracelet/log"
 
 	"github.com/Vernacular-ai/godub"
 	"github.com/Vernacular-ai/godub/converter"
@@ -32,14 +32,13 @@ func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) []*rdt.Post {
 
 		go func(post *rdt.Post) {
 			defer wg.Done()
-			TakeScreenShot(post.Title, post.ID, config)
+			TakeScreenShot(post.Title, post.FullID, config)
 		}(post)
 
 		audioLength := CreateAudioFile(post, config, speech)
-		log.Printf("Audio file %s is %d seconds long, total length now: %d", post.ID, audioLength, length+audioLength)
 		if length+audioLength > maxLength {
-			os.Remove("audio/" + post.ID + ".mp3")
-			log.Printf("Audio file %s is too long, skipping and all subsequent posts", post.ID)
+			os.Remove("audio/" + post.FullID + ".mp3")
+			log.Warn("Audio file %s is too long, skipping and all subsequent posts", post.FullID)
 			break
 		} else {
 			length += audioLength
@@ -50,9 +49,9 @@ func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) []*rdt.Post {
 	wg.Wait()
 
 	if utils.CheckFileExists("final_cut", "audio/result") {
-		log.Println("Final cut already exists, skipping")
+		log.Warn("Final cut already exists, skipping")
 	} else {
-		log.Printf("Finished generating audio files, now concatenating them")
+		log.Info("Finished generating audio files, now concatenating them")
 		ConcatAllAudiosWithPause()
 	}
 
@@ -60,8 +59,8 @@ func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) []*rdt.Post {
 }
 
 func CreateAudioFile(post *rdt.Post, config config.Config, speech htgotts.Speech) int {
-	if utils.CheckFileExists(post.ID, "audio") {
-		length, err := GetMP3Length("audio/" + post.ID + ".mp3")
+	if utils.CheckFileExists(post.FullID, "audio") {
+		length, err := GetMP3Length("audio/" + post.FullID + ".mp3")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -69,7 +68,7 @@ func CreateAudioFile(post *rdt.Post, config config.Config, speech htgotts.Speech
 		return length + 1
 	}
 
-	audio, err := speech.CreateSpeechFile(post.Title, post.ID)
+	audio, err := speech.CreateSpeechFile(post.Title, post.FullID)
 
 	if err != nil {
 		log.Fatal(err)
@@ -86,14 +85,14 @@ func CreateAudioFile(post *rdt.Post, config config.Config, speech htgotts.Speech
 func GetMP3Length(filename string) (int, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		fmt.Println("Error opening file: ", err)
+		log.Error("Error opening file: ", err)
 		return 0, err
 	}
 	defer file.Close()
 
 	mp3Decoder, err := mp3.NewDecoder(file)
 	if err != nil {
-		fmt.Println("Error creating decoder: ", err)
+		log.Error("Error creating decoder: ", err)
 		return 0, err
 	}
 	// 4 bytes per sample
@@ -156,7 +155,7 @@ func ConcatAllAudiosWithPause() {
 			log.Fatal(err)
 		}
 
-		log.Printf("Concatenating %s", audio)
+		log.Info("Concatenating %s", audio)
 		segment, err = segment.Append(segment2, segmentSilence)
 
 		if err != nil {
@@ -164,7 +163,7 @@ func ConcatAllAudiosWithPause() {
 		}
 	}
 
-	log.Printf("Concatenating %s", filePath)
+	log.Info("Concatenating %s", filePath)
 	newPth := path.Join("audio", "result", "final_cut.mp3")
 	err = godub.NewExporter(newPth).WithDstFormat("mp3").WithBitRate(converter.MP3BitRatePerfect).Export(segment)
 

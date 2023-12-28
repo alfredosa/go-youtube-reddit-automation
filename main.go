@@ -3,13 +3,18 @@ package main
 // golang path github.com/alfredosa/go-youtube-reddit-automation
 
 import (
-	"log"
+	"github.com/charmbracelet/log"
 
 	"github.com/BurntSushi/toml"
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
+	"github.com/alfredosa/go-youtube-reddit-automation/db"
+	dbmod "github.com/alfredosa/go-youtube-reddit-automation/db"
 	"github.com/alfredosa/go-youtube-reddit-automation/reddit"
 	"github.com/alfredosa/go-youtube-reddit-automation/utils"
 	"github.com/alfredosa/go-youtube-reddit-automation/video"
+	"github.com/jmoiron/sqlx"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -19,16 +24,30 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := db.Connect(config)
+	log.Info("Connected to DB", "driver", db.DriverName())
+	CreateVideo(config, db)
+}
 
-	posts, err := reddit.PullLatestNews(config)
+func CreateVideo(config config.Config, db *sqlx.DB) {
+
+	posts, err := reddit.PullLatestNews(config, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if utils.CheckFileExists("final_cut", "audio/result") && !utils.CheckFileExists("resultwsound", "studio/staging") {
-		video.CreateVideo(posts, config)
-	} else {
-		println("Final Video already exists, skipping video creation")
-	}
+		err := video.CreateVideo(posts, config)
+		if err != nil {
+			log.Fatal(err, "file: ", err.Error())
+		}
+		log.Info("Finished creating video, now adding posts to db")
+		err = dbmod.InsertPostsFromReddit(posts, db)
+		if err != nil {
+			log.Fatal(err)
+		}
 
+	} else {
+		log.Info("Final Video already exists, skipping video creation")
+	}
 }

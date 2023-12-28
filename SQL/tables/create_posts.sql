@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS posts (
-    id SERIAL PRIMARY KEY,
-    full_id VARCHAR(255),
+    id UNIQUE VARCHAR(255) PRIMARY KEY,
+    full_id VARCHAR(255) UNIQUE,
     created TIMESTAMP,
     edited TIMESTAMP,
     permalink TEXT,
@@ -22,6 +22,6 @@ CREATE TABLE IF NOT EXISTS posts (
     nsfw BOOLEAN,
     is_self_post BOOLEAN,
     saved BOOLEAN,
-    stickied BOOLEAN
+    stickied BOOLEAN,
     posted BOOLEAN
 );

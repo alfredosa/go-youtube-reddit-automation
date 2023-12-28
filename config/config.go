@@ -38,4 +38,13 @@ type Config struct {
 		Upload_To_Youtube   bool
 		Generation_Interval time.Duration
 	}
+	NewsAPI struct {
+		API_Key string
+	}
+	Database struct {
+		Port     int
+		User     string
+		Password string
+		DB_Name  string
+	}
 }

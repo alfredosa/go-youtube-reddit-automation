@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  pg:
+    image: postgres:latest
+    restart: always
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./sql/tables:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_PASSWORD: new!1%sxchul4iosd
+      POSTGRES_USER: admin
+      POSTGRES_DB: app
+    ports:
+      - 5432:5432
+
+  # go:
+  #   build:
+  #     dockerfile: Dockerfile
+  #     context: app/
+  #   ports:
+  #     - 8080:8080
+
+volumes:
+  db_data:
+    driver: local

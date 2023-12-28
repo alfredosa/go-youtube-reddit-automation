@@ -1,7 +1,6 @@
 package video
 
 import (
-	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -9,18 +8,21 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/charmbracelet/log"
+
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
 	"github.com/alfredosa/go-youtube-reddit-automation/reddit"
 	"github.com/alfredosa/go-youtube-reddit-automation/utils"
 	rdt "github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
-func CreateVideo(posts []*rdt.Post, config config.Config) {
+func CreateVideo(posts []*rdt.Post, config config.Config) error {
 	final_cut_duration, err := reddit.GetMP3Length("audio/result/final_cut.mp3")
 
-	log.Printf("Final cut duration: %d", final_cut_duration)
+	log.Info("Final cut duration: %d", final_cut_duration)
 	if err != nil {
-		log.Fatal(err)
+		log.Error("Could not get final cut duration")
+		return err
 	}
 
 	var wg sync.WaitGroup
@@ -30,7 +32,7 @@ func CreateVideo(posts []*rdt.Post, config config.Config) {
 
 		go func(post *rdt.Post) {
 			defer wg.Done()
-			audio := "audio/" + post.ID + ".mp3"
+			audio := "audio/" + post.FullID + ".mp3"
 			// Get the duration of the audio file
 			duration, err := reddit.GetMP3Length(audio)
 			if err != nil {
@@ -38,19 +40,20 @@ func CreateVideo(posts []*rdt.Post, config config.Config) {
 			}
 
 			// Create a video with the same duration as the audio
-			CreateVideoWithLength(duration, post.ID, post.Title)
+			CreateVideoWithLength(duration, post.FullID, post.Title)
 		}(post)
 	}
 
 	wg.Wait()
 
-	log.Printf("Finished creating videos, now concatenating them and adding audio")
+	log.Info("Finished creating videos, now concatenating them and adding audio")
 	preSound := ConcatAllVideos()
 	audio := "audio/result/final_cut.mp3"
 	AddAudioToVideo(preSound, audio, "studio/staging/resultwsound.mp4")
 
 	os.Remove(preSound)
 	CleanUp()
+	return nil
 }
 
 func CleanUp() {
@@ -61,26 +64,12 @@ func CleanUp() {
 		log.Fatal(err)
 	}
 
-	var processedFiles []string
-
 	for _, file := range files {
 		if strings.Contains(file.Name(), "_enhanced.mp4") {
-			// add file by id
-			processedFiles = append(processedFiles, strings.Split(file.Name(), "_")[0])
 			os.Remove(dir + file.Name())
 		}
 	}
 
-	// create file with all processed files
-	var processedFilesString strings.Builder
-	for _, file := range processedFiles {
-		processedFilesString.WriteString(file + "\n")
-	}
-
-	err = os.WriteFile("processed.txt", []byte(processedFilesString.String()), 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
 	dirname := "audio/"
 	utils.RemoveFilesWithSubstr(".mp3", dirname)
 
@@ -97,11 +86,11 @@ func CreateVideoWithLength(duration int, id string, title string) {
 	studioStaging := "studio/staging/"
 
 	if utils.CheckFileExists(id, studioStaging) {
-		log.Printf("Enhanced Video %s already exists, skipping", id)
+		log.Info("Enhanced Video %s already exists, skipping", id)
 		return
 	}
 
-	log.Printf("Creating video %s", id)
+	log.Info("Creating video %s", id)
 
 	stuidoPath := studioStaging + id + ".mp4"
 	cmd := exec.Command("ffmpeg", "-ss", strconv.Itoa(randomNumber), "-i", "studio/gta4_hd.mp4", "-t", strconv.Itoa(actualDruration), "-vf", "scale=-1:1920,crop=1080:1920:(iw-1080)/2:0", stuidoPath)
@@ -116,14 +105,12 @@ func CreateVideoWithLength(duration int, id string, title string) {
 	images := GetAllImagesByID(id)
 
 	if len(images) == 1 {
-		log.Printf("Adding one image to video %s", OutputPath)
 		AddOneImageToVideo(videoPath, images[0], id, title)
 	}
 	if len(images) == 2 {
-		log.Printf("Adding two images to video %s", OutputPath)
 		AddTwoImagesToVideo(videoPath, images[0], images[1], id, title)
 	}
-	log.Printf("Finished creating video %s", OutputPath)
+	log.Info("Finished creating video %s", OutputPath)
 }
 
 func CreateNewsBannerAndAdd(title string, videoPath string, id string) {
