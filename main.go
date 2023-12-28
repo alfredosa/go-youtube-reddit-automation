@@ -12,6 +12,7 @@ import (
 	"github.com/alfredosa/go-youtube-reddit-automation/reddit"
 	"github.com/alfredosa/go-youtube-reddit-automation/utils"
 	"github.com/alfredosa/go-youtube-reddit-automation/video"
+	"github.com/alfredosa/go-youtube-reddit-automation/youtube"
 	"github.com/jmoiron/sqlx"
 
 	_ "github.com/lib/pq"
@@ -36,7 +37,7 @@ func CreateVideo(config config.Config, db *sqlx.DB) {
 		log.Fatal(err)
 	}
 
-	if utils.CheckFileExists("final_cut", "audio/result") && !utils.CheckFileExists("resultwsound", "studio/staging") {
+	if !utils.CheckFileExists("resultwsound", "studio/staging") {
 		err := video.CreateVideo(posts, config)
 		if err != nil {
 			log.Fatal(err, "file: ", err.Error())
@@ -50,4 +51,10 @@ func CreateVideo(config config.Config, db *sqlx.DB) {
 	} else {
 		log.Info("Final Video already exists, skipping video creation")
 	}
+
+	keywords := youtube.GetKeywords()
+	title := youtube.GetVideoTitle()
+	description := youtube.GetVideoDescription(posts)
+	filename := "studio/staging/resultwsound.mp4"
+	youtube.YoutubeUpload(config, title, description, "25", "public", keywords, filename)
 }

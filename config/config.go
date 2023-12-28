@@ -4,8 +4,9 @@ import "time"
 
 type Config struct {
 	Goggle struct {
-		API_Key string
-		CX      string
+		API_Key       string
+		CX            string
+		Refresh_Token string
 	}
 	Directory struct {
 		Path string

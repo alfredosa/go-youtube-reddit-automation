@@ -14,7 +14,7 @@ import (
 var ctx = context.Background()
 
 func PullLatestNews(config config.Config, db *sqlx.DB) ([]*reddit.Post, error) {
-	posts, resp, err := reddit.DefaultClient().Subreddit.TopPosts(ctx, "news", &reddit.ListPostOptions{
+	posts, _, err := reddit.DefaultClient().Subreddit.TopPosts(ctx, "news", &reddit.ListPostOptions{
 		ListOptions: reddit.ListOptions{
 			Limit: 20,
 		},
@@ -29,7 +29,6 @@ func PullLatestNews(config config.Config, db *sqlx.DB) ([]*reddit.Post, error) {
 	posts = dbmod.FilterPostedPosts(posts, db)
 	log.Info("Found after filtering", "posts", len(posts))
 	processedPosts := CreateTTSAndSSFiles(posts, config)
-	log.Info("resp: %s", resp.After)
 
 	return processedPosts, nil
 }
