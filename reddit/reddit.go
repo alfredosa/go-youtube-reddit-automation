@@ -32,18 +32,3 @@ func PullLatestNews(config config.Config, db *sqlx.DB) ([]*reddit.Post, error) {
 
 	return processedPosts, nil
 }
-
-// Questionable to save jsons? We have a db
-
-// func save_posts_to_json(posts []*reddit.Post) {
-// 	for _, post := range posts {
-// 		filename := post.FullID + ".json"
-// 		if !utils.CheckFileExists(filename, "data") {
-// 			json_file, err := json.Marshal(posts)
-// 			if err != nil {
-// 				panic(err)
-// 			}
-// 			os.WriteFile("data/"+filename, json_file, 0644)
-// 		}
-// 	}
-// }

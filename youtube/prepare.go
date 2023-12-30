@@ -21,6 +21,7 @@ func GetVideoDescription(posts []*rdt.Post) string {
 	}
 
 	description += "this content is not my own, it belongs to the original authors. \n\n This is a compilation of the top breaking news of the day."
+
 	return description
 }
 
@@ -29,5 +30,6 @@ func GetKeywords() string {
 }
 
 func GetVideoTitle() string {
-	return fmt.Sprintf("Top Breaking News of %d", time.Now().Day())
+	date := time.Now()
+	return fmt.Sprintf("Today's top breaking news (%d/%d/%d).", date.Year(), date.Month(), date.Day())
 }

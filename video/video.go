@@ -90,7 +90,7 @@ func CreateVideoWithLength(duration int, id string, title string) {
 		return
 	}
 
-	log.Info("Creating video %s", id)
+	log.Info("Creating", "video", id)
 
 	stuidoPath := studioStaging + id + ".mp4"
 	cmd := exec.Command("ffmpeg", "-ss", strconv.Itoa(randomNumber), "-i", "studio/gta4_hd.mp4", "-t", strconv.Itoa(actualDruration), "-vf", "scale=-1:1920,crop=1080:1920:(iw-1080)/2:0", stuidoPath)

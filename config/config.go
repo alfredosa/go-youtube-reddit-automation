@@ -48,4 +48,9 @@ type Config struct {
 		Password string
 		DB_Name  string
 	}
+	Instagram struct {
+		User_ID      string
+		Access_Token string
+		Post_URL     string
+	}
 }

@@ -9,10 +9,10 @@ import (
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
 	"github.com/alfredosa/go-youtube-reddit-automation/db"
 	dbmod "github.com/alfredosa/go-youtube-reddit-automation/db"
+	"github.com/alfredosa/go-youtube-reddit-automation/instagram"
 	"github.com/alfredosa/go-youtube-reddit-automation/reddit"
 	"github.com/alfredosa/go-youtube-reddit-automation/utils"
 	"github.com/alfredosa/go-youtube-reddit-automation/video"
-	"github.com/alfredosa/go-youtube-reddit-automation/youtube"
 	"github.com/jmoiron/sqlx"
 
 	_ "github.com/lib/pq"
@@ -52,9 +52,11 @@ func CreateVideo(config config.Config, db *sqlx.DB) {
 		log.Info("Final Video already exists, skipping video creation")
 	}
 
-	keywords := youtube.GetKeywords()
-	title := youtube.GetVideoTitle()
-	description := youtube.GetVideoDescription(posts)
-	filename := "studio/staging/resultwsound.mp4"
-	youtube.YoutubeUpload(config, title, description, "25", "public", keywords, filename)
+	// keywords := youtube.GetKeywords()
+	// title := youtube.GetVideoTitle()
+	// description := youtube.GetVideoDescription(posts)
+	// filename := "studio/staging/resultwsound.mp4"
+	// youtube.YoutubeUpload(config, title, description, "25", "public", keywords, filename)
+	instagram.UploadInstagramVideo(config, posts)
+
 }

@@ -34,7 +34,7 @@ func YoutubeUpload(config config.Config, title, description, category, privacy s
 	// Load the redirect URL from the JSON file
 	var conf WebConfig
 	if err := json.Unmarshal(b, &conf); err != nil {
-		log.Fatalf("Unable to parse JSON file: %v", err)
+		log.Fatal("Unable to parse JSON file:", "error", err)
 	}
 
 	// Create an oauth2 config from the client secret file
@@ -91,6 +91,4 @@ func YoutubeUpload(config config.Config, title, description, category, privacy s
 		log.Fatalf("Error making YouTube API call: %v", err)
 	}
 	log.Info("Upload successful! Video ID: ", "video", response.Id)
-	os.Remove(filename)
-
 }
