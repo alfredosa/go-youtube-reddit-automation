@@ -5,37 +5,22 @@ import (
 	"os"
 	"time"
 
+	"github.com/barthr/newsapi"
 	"github.com/charmbracelet/log"
 	"github.com/jmoiron/sqlx"
-	rdt "github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
 type DBPost struct {
-	ID                    string     `db:"id"`
-	FullID                string     `db:"full_id"`
-	Created               *time.Time `db:"created"`
-	Edited                *time.Time `db:"edited"`
-	Permalink             string     `db:"permalink"`
-	URL                   string     `db:"url"`
-	Title                 string     `db:"title"`
-	Body                  string     `db:"body"`
-	Likes                 *bool      `db:"likes"`
-	Score                 int        `db:"score"`
-	UpvoteRatio           float32    `db:"upvote_ratio"`
-	NumberOfComments      int        `db:"number_of_comments"`
-	SubredditName         string     `db:"subreddit_name"`
-	SubredditNamePrefixed string     `db:"subreddit_name_prefixed"`
-	SubredditID           string     `db:"subreddit_id"`
-	SubredditSubscribers  int        `db:"subreddit_subscribers"`
-	Author                string     `db:"author"`
-	AuthorID              string     `db:"author_id"`
-	Spoiler               bool       `db:"spoiler"`
-	Locked                bool       `db:"locked"`
-	NSFW                  bool       `db:"nsfw"`
-	IsSelfPost            bool       `db:"is_self_post"`
-	Saved                 bool       `db:"saved"`
-	Stickied              bool       `db:"stickied"`
-	Posted                bool       `db:"posted"`
+	PostId      string    `json:"post_id" db:"post_id"`
+	SourceId    string    `json:"source_id" db:"source_id"`
+	SourceName  string    `json:"source_name" db:"source_name"`
+	Author      string    `json:"author" db:"author"`
+	Title       string    `json:"title" db:"title"`
+	Description string    `json:"description" db:"description"`
+	Url         string    `json:"url" db:"url"`
+	UrlToImage  string    `json:"url_to_image" db:"url_to_image"`
+	PublishedAt time.Time `json:"published_at" db:"published_at"`
+	Content     string    `json:"content" db:"content"`
 }
 
 func GetPostByID(id string, db *sqlx.DB) (DBPost, error) {
@@ -47,8 +32,8 @@ func GetPostByID(id string, db *sqlx.DB) (DBPost, error) {
 	return post, nil
 }
 
-func FilterPostedPosts(posts []*rdt.Post, db *sqlx.DB) []*rdt.Post {
-	var filteredPosts []*rdt.Post
+func FilterPostedPosts(posts []newsapi.Article, db *sqlx.DB) []newsapi.Article {
+	var filteredPosts []newsapi.Article
 	for _, post := range posts {
 		_, err := GetPostByID(post.FullID, db)
 		if err != nil {
@@ -62,7 +47,7 @@ func FilterPostedPosts(posts []*rdt.Post, db *sqlx.DB) []*rdt.Post {
 	return filteredPosts
 }
 
-func InsertPostsFromReddit(posts []*rdt.Post, db *sqlx.DB) error {
+func InsertPostsFromReddit(posts []newsapi.Article, db *sqlx.DB) error {
 
 	file := "sql/transactions/insert_post.sql"
 

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/hex"
 	"log"
 	"os"
 	"strings"
@@ -53,4 +54,8 @@ func RemoveFilesWithSubstr(substr string, dir string) {
 			os.Remove(dir + f.Name())
 		}
 	}
+}
+
+func StringToHex(s string) string {
+	return hex.EncodeToString([]byte(s))
 }

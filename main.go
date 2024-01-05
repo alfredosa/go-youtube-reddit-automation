@@ -10,7 +10,7 @@ import (
 	"github.com/alfredosa/go-youtube-reddit-automation/db"
 	dbmod "github.com/alfredosa/go-youtube-reddit-automation/db"
 	"github.com/alfredosa/go-youtube-reddit-automation/instagram"
-	"github.com/alfredosa/go-youtube-reddit-automation/reddit"
+	"github.com/alfredosa/go-youtube-reddit-automation/news"
 	"github.com/alfredosa/go-youtube-reddit-automation/utils"
 	"github.com/alfredosa/go-youtube-reddit-automation/video"
 	"github.com/jmoiron/sqlx"
@@ -32,7 +32,7 @@ func main() {
 
 func CreateVideo(config config.Config, db *sqlx.DB) {
 
-	posts, err := reddit.PullLatestNews(config, db)
+	posts, err := news.PullLatestNews(config, db)
 	if err != nil {
 		log.Fatal(err)
 	}
