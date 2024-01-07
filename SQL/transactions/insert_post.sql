@@ -1,30 +1,15 @@
 INSERT INTO posts 
 (
-    id, 
-    full_id, 
-    created, 
-    edited, 
-    permalink, 
-    url, 
-    title, 
-    body, 
-    likes, 
-    score, 
-    upvote_ratio, 
-    number_of_comments, 
-    subreddit_name, 
-    subreddit_name_prefixed, 
-    subreddit_id, 
-    subreddit_subscribers, 
+    post_id, 
+    source_id, 
+    source_name, 
     author, 
-    author_id, 
-    spoiler, 
-    locked, 
-    nsfw, 
-    is_self_post, 
-    saved, 
-    stickied, 
-    posted
+    title, 
+    description, 
+    url, 
+    url_to_image, 
+    published_at, 
+    content
 )
 VALUES 
 (
@@ -37,20 +22,5 @@ VALUES
     $7, 
     $8, 
     $9, 
-    $10, 
-    $11, 
-    $12, 
-    $13, 
-    $14, 
-    $15, 
-    $16, 
-    $17, 
-    $18, 
-    $19, 
-    $20, 
-    $21, 
-    $22, 
-    $23, 
-    $24, 
-    true
+    $10
 )

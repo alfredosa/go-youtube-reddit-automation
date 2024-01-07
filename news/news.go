@@ -3,7 +3,6 @@ package news
 import (
 	"context"
 	"net/http"
-	"os"
 
 	"github.com/charmbracelet/log"
 
@@ -13,12 +12,11 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var ctx = context.Background()
-
 func PullLatestNews(config config.Config, db *sqlx.DB) ([]newsapi.Article, error) {
-	newsApiClient := newsapi.NewClient(config.NewsAPI.API_Key, newsapi.WithHTTPClient(http.DefaultClient))
+	var ctx = context.Background()
+	newsApiClient := newsapi.NewClient(config.NewsAPI.API_Key, newsapi.WithHTTPClient(http.DefaultClient), newsapi.WithUserAgent("go-youtube-reddit-automation"))
 
-	articles, err := newsApiClient.GetEverything(context.Background(), &newsapi.EverythingParameters{
+	articles, err := newsApiClient.GetEverything(ctx, &newsapi.EverythingParameters{
 		Language: "en",
 		Keywords: "tech",
 		SortBy:   "popularity",
@@ -28,10 +26,9 @@ func PullLatestNews(config config.Config, db *sqlx.DB) ([]newsapi.Article, error
 		return nil, err
 	}
 
-	// TODO! FILTER OUT POSTS THAT ARE ALREADY POSTED. DB needs to be setup first
 	log.Info("Found", "posts", len(articles.Articles))
-	os.Exit(0)
-	posts = dbmod.FilterPostedPosts(posts, db)
+
+	posts := dbmod.FilterPostedPosts(articles.Articles, db)
 	log.Info("Found after filtering", "posts", len(posts))
 	processedPosts := CreateTTSAndSSFiles(posts, config)
 	return processedPosts, nil

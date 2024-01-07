@@ -5,12 +5,14 @@ go 1.21.4
 require (
 	github.com/BurntSushi/toml v1.3.2
 	github.com/Vernacular-ai/godub v0.1.6
+	github.com/aws/aws-sdk-go v1.49.16
+	github.com/barthr/newsapi v1.3.0
 	github.com/charmbracelet/log v0.3.1
 	github.com/hajimehoshi/go-mp3 v0.3.4
 	github.com/hegedustibor/htgo-tts v0.0.0-20230402053941-cd8d1a158135
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
-	github.com/vartanbeno/go-reddit/v2 v2.0.1
+	golang.org/x/oauth2 v0.15.0
 	google.golang.org/api v0.154.0
 )
 
@@ -18,7 +20,6 @@ require (
 	cloud.google.com/go/compute v1.23.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/barthr/newsapi v1.3.0 // indirect
 	github.com/charmbracelet/lipgloss v0.9.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
@@ -33,6 +34,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/hajimehoshi/oto/v2 v2.3.1 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
@@ -48,7 +50,6 @@ require (
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/net v0.19.0 // indirect
-	golang.org/x/oauth2 v0.15.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect

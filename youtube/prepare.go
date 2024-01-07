@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	rdt "github.com/vartanbeno/go-reddit/v2/reddit"
+	"github.com/barthr/newsapi"
 )
 
-func GetVideoDescription(posts []*rdt.Post) string {
+func GetVideoDescription(posts []newsapi.Article) string {
 	var description string
 
 	date := time.Now()
@@ -17,7 +17,7 @@ func GetVideoDescription(posts []*rdt.Post) string {
 
 	for i, post := range posts {
 		parts := strings.Split(post.URL, ".")
-		description += strconv.Itoa(i) + ": " + post.Title + "by: " + parts[1] + " \n\n"
+		description += strconv.Itoa(i) + ": " + post.Title + " by: " + parts[1] + " \n\n"
 	}
 
 	description += "this content is not my own, it belongs to the original authors. \n\n This is a compilation of the top breaking news of the day."

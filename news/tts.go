@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/barthr/newsapi"
 	"github.com/charmbracelet/log"
 
 	"github.com/Vernacular-ai/godub"
@@ -15,11 +16,10 @@ import (
 	"github.com/alfredosa/go-youtube-reddit-automation/utils"
 	"github.com/hajimehoshi/go-mp3"
 	htgotts "github.com/hegedustibor/htgo-tts"
-	rdt "github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
-func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) []*rdt.Post {
-	var processedPosts []*rdt.Post
+func CreateTTSAndSSFiles(posts []newsapi.Article, config config.Config) []newsapi.Article {
+	var processedPosts []newsapi.Article
 	var wg sync.WaitGroup
 
 	speech := htgotts.Speech{Folder: "audio", Language: config.TextToSpeechSetup.Voice_ID}
@@ -28,17 +28,18 @@ func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) []*rdt.Post {
 	maxLength := 55
 
 	for _, post := range posts {
+		postId := utils.StringToHex(post.Title)
 		wg.Add(1)
 
-		go func(post *rdt.Post) {
+		go func(post newsapi.Article) {
 			defer wg.Done()
-			TakeScreenShot(post.Title, post.FullID, config)
+			TakeScreenShot(post.Title, postId, config)
 		}(post)
 
 		audioLength := CreateAudioFile(post, config, speech)
 		if length+audioLength > maxLength {
-			os.Remove("audio/" + post.FullID + ".mp3")
-			log.Warn("Audio file %s is too long, skipping and all subsequent posts", post.FullID)
+			os.Remove("audio/" + postId + ".mp3")
+			log.Warn("Audio file %s is too long, skipping and all subsequent posts", postId)
 			break
 		} else {
 			length += audioLength
@@ -58,9 +59,10 @@ func CreateTTSAndSSFiles(posts []*rdt.Post, config config.Config) []*rdt.Post {
 	return processedPosts
 }
 
-func CreateAudioFile(post *rdt.Post, config config.Config, speech htgotts.Speech) int {
-	if utils.CheckFileExists(post.FullID, "audio") {
-		length, err := GetMP3Length("audio/" + post.FullID + ".mp3")
+func CreateAudioFile(post newsapi.Article, config config.Config, speech htgotts.Speech) int {
+	postId := utils.StringToHex(post.Title)
+	if utils.CheckFileExists(postId, "audio") {
+		length, err := GetMP3Length("audio/" + postId + ".mp3")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -68,7 +70,7 @@ func CreateAudioFile(post *rdt.Post, config config.Config, speech htgotts.Speech
 		return length + 1
 	}
 
-	audio, err := speech.CreateSpeechFile(post.Title, post.FullID)
+	audio, err := speech.CreateSpeechFile(post.Title, postId)
 
 	if err != nil {
 		log.Fatal(err)

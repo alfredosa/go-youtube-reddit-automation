@@ -1,6 +1,8 @@
 package video
 
 import (
+	"bytes"
+	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -8,16 +10,16 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/barthr/newsapi"
 	"github.com/charmbracelet/log"
 
 	"github.com/alfredosa/go-youtube-reddit-automation/config"
-	"github.com/alfredosa/go-youtube-reddit-automation/reddit"
+	"github.com/alfredosa/go-youtube-reddit-automation/news"
 	"github.com/alfredosa/go-youtube-reddit-automation/utils"
-	rdt "github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
-func CreateVideo(posts []*rdt.Post, config config.Config) error {
-	final_cut_duration, err := reddit.GetMP3Length("audio/result/final_cut.mp3")
+func CreateVideo(posts []newsapi.Article, config config.Config) error {
+	final_cut_duration, err := news.GetMP3Length("audio/result/final_cut.mp3")
 
 	log.Info("Final cut duration: %d", final_cut_duration)
 	if err != nil {
@@ -28,25 +30,26 @@ func CreateVideo(posts []*rdt.Post, config config.Config) error {
 	var wg sync.WaitGroup
 
 	for _, post := range posts {
+		postId := utils.StringToHex(post.Title)
 		wg.Add(1)
 
-		go func(post *rdt.Post) {
+		go func(post newsapi.Article) {
 			defer wg.Done()
-			audio := "audio/" + post.FullID + ".mp3"
+			audio := "audio/" + postId + ".mp3"
 			// Get the duration of the audio file
-			duration, err := reddit.GetMP3Length(audio)
+			duration, err := news.GetMP3Length(audio)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal(err, "file: ", err.Error())
 			}
 
 			// Create a video with the same duration as the audio
-			CreateVideoWithLength(duration, post.FullID, post.Title)
+			CreateVideoWithLength(duration, postId, post.Title)
 		}(post)
 	}
 
+	log.Info("Waiting for all videos to be created")
 	wg.Wait()
 
-	log.Info("Finished creating videos, now concatenating them and adding audio")
 	preSound := ConcatAllVideos()
 	audio := "audio/result/final_cut.mp3"
 	AddAudioToVideo(preSound, audio, "studio/staging/resultwsound.mp4")
@@ -61,7 +64,7 @@ func CleanUp() {
 	dir := "studio/staging/"
 	files, err := os.ReadDir(dir)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "file: ", err.Error())
 	}
 
 	for _, file := range files {
@@ -94,14 +97,19 @@ func CreateVideoWithLength(duration int, id string, title string) {
 
 	stuidoPath := studioStaging + id + ".mp4"
 	cmd := exec.Command("ffmpeg", "-ss", strconv.Itoa(randomNumber), "-i", "studio/gta4_hd.mp4", "-t", strconv.Itoa(actualDruration), "-vf", "scale=-1:1920,crop=1080:1920:(iw-1080)/2:0", stuidoPath)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 	err := cmd.Run()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprint(err) + ": " + stderr.String())
 	}
+
 	videoPath := studioStaging + id + ".mp4"
 	OutputPath := studioStaging + id + "_enhanced.mp4"
-
+	log.Info("Getting Images for", "video", id)
 	images := GetAllImagesByID(id)
 
 	if len(images) == 1 {
@@ -111,6 +119,16 @@ func CreateVideoWithLength(duration int, id string, title string) {
 		AddTwoImagesToVideo(videoPath, images[0], images[1], id, title)
 	}
 	log.Info("Finished creating video %s", OutputPath)
+}
+
+func cleanString(s string) string {
+	escapedText := strings.ReplaceAll(s, "The Morning After: ", "")
+	escapedText = strings.ReplaceAll(escapedText, ":", "")
+	escapedText = strings.ReplaceAll(escapedText, "'", "")
+	escapedText = strings.ReplaceAll(escapedText, "=", "")
+	escapedText = strings.ReplaceAll(escapedText, "\\", "")
+	escapedText = strings.ReplaceAll(escapedText, "/", "")
+	return escapedText
 }
 
 func CreateNewsBannerAndAdd(title string, videoPath string, id string) {
@@ -124,20 +142,31 @@ func CreateNewsBannerAndAdd(title string, videoPath string, id string) {
 
 	const baseBanner = "studio/banners/onestackbanner.png"
 	// create banner with text
-	bannercmd := exec.Command("ffmpeg", "-i", baseBanner, "-vf", "drawtext=fontfile=studio/font/timesnewroman.ttf:text='"+lines[0]+"':x=(w-text_w)*4/10:y=(h-text_h)/2:fontsize=24:fontcolor=black", videoBannerPath)
+	bannercmd := exec.Command("ffmpeg", "-i", baseBanner, "-vf", "drawtext=fontfile=studio/font/timesnewroman.ttf:text='"+cleanString(lines[0])+"':x=(w-text_w)*4/10:y=(h-text_h)/2:fontsize=24:fontcolor=black", videoBannerPath)
+
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	bannercmd.Stdout = &out
+	bannercmd.Stderr = &stderr
 	err := bannercmd.Run()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprint(err) + ": " + stderr.String())
 	}
 
 	finalVideoOutputPath := "studio/staging/" + id + "_enhanced.mp4"
 	// add banner to video with ffmpeg
 	cmd := exec.Command("ffmpeg", "-i", videoPath, "-i", videoBannerPath, "-filter_complex", "[1:v]scale=1060:-1,format=rgba,colorchannelmixer=aa=0.9[img2];[0:v][img2]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)*6/7", finalVideoOutputPath)
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 	err = cmd.Run()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprint(err) + ": " + stderr.String())
+	}
+
+	if err != nil {
+		log.Fatal(err, "file: ", err.Error())
 	}
 	os.Remove(videoPath)
 	os.Remove(videoBannerPath)
@@ -149,7 +178,7 @@ func AddOneImageToVideo(videoPath string, imagePath string, id string, title str
 	err := cmd.Run()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "file: ", err.Error())
 	}
 	os.Remove(videoPath)
 	CreateNewsBannerAndAdd(title, videoPathEnhanced, id)
@@ -159,17 +188,26 @@ func AddTwoImagesToVideo(videoPath string, imagePath1 string, imagePath2 string,
 
 	videoPathEnhanced := "studio/staging/" + id + "pre_enhanced.mp4"
 	cmd := exec.Command("ffmpeg", "-i", videoPath, "-i", imagePath1, "-filter_complex", "[1:v]scale=640:-1,format=rgba,colorchannelmixer=aa=0.9[img1];[0:v][img1]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/4", videoPathEnhanced)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 	err := cmd.Run()
+
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprint(err) + ": " + stderr.String())
 	}
+
 	os.Remove(videoPath)
 	finalOutput := "studio/staging/" + id + "pre_banner_enhanced.mp4"
 	cmd = exec.Command("ffmpeg", "-i", videoPathEnhanced, "-i", imagePath2, "-filter_complex", "[1:v]scale=640:-1,format=rgba,colorchannelmixer=aa=0.9[img2];[0:v][img2]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)*2/3", finalOutput)
+
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 	err = cmd.Run()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprint(err) + ": " + stderr.String())
 	}
 	os.Remove(videoPathEnhanced)
 	CreateNewsBannerAndAdd(title, finalOutput, id)
@@ -179,7 +217,7 @@ func GetAllImagesByID(id string) []string {
 	var images []string
 	files, err := os.ReadDir("screenshots")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "file: ", err.Error())
 	}
 
 	for _, f := range files {
@@ -193,7 +231,7 @@ func GetAllImagesByID(id string) []string {
 func ConcatAllVideos() string {
 	files, err := os.ReadDir("studio/staging")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "file: ", err.Error())
 	}
 
 	// Create a list of files for FFmpeg
@@ -210,7 +248,7 @@ func ConcatAllVideos() string {
 	// Write the list to a file
 	err = os.WriteFile("filelist.txt", []byte(fileList.String()), 0644)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "file: ", err.Error())
 	}
 
 	videoPreSound := "studio/staging/presoundresult.mp4"
@@ -218,7 +256,7 @@ func ConcatAllVideos() string {
 	cmd := exec.Command("ffmpeg", "-f", "concat", "-safe", "0", "-i", "filelist.txt", "-c", "copy", videoPreSound)
 	err = cmd.Run()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "file: ", err.Error())
 	}
 	return videoPreSound
 }
@@ -230,7 +268,7 @@ func AddAudioToVideo(videoFile string, audioFile string, outputFile string) {
 	// Run the command
 	err := cmd.Run()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "file: ", err.Error())
 	}
 }
 

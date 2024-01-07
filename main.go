@@ -3,6 +3,8 @@ package main
 // golang path github.com/alfredosa/go-youtube-reddit-automation
 
 import (
+	"os"
+
 	"github.com/charmbracelet/log"
 
 	"github.com/BurntSushi/toml"
@@ -31,32 +33,37 @@ func main() {
 }
 
 func CreateVideo(config config.Config, db *sqlx.DB) {
-
-	posts, err := news.PullLatestNews(config, db)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if !utils.CheckFileExists("resultwsound", "studio/staging") {
-		err := video.CreateVideo(posts, config)
-		if err != nil {
-			log.Fatal(err, "file: ", err.Error())
+	for {
+		log.Info("Starting new iteration")
+		posts, err := news.PullLatestNews(config, db)
+		if len(posts) == 0 {
+			log.Info("No new posts found, exiting")
+			os.Exit(0)
 		}
-		log.Info("Finished creating video, now adding posts to db")
-		err = dbmod.InsertPostsFromReddit(posts, db)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-	} else {
-		log.Info("Final Video already exists, skipping video creation")
+		if !utils.CheckFileExists("resultwsound", "studio/staging") {
+			err := video.CreateVideo(posts, config)
+			if err != nil {
+				log.Fatal(err, "file: ", err.Error())
+			}
+			log.Info("Finished creating video, now adding posts to db")
+			err = dbmod.InsertPostsFromReddit(posts, db)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+		} else {
+			log.Info("Final Video already exists, skipping video creation")
+		}
+
+		// keywords := youtube.GetKeywords()
+		// title := youtube.GetVideoTitle()
+		// description := youtube.GetVideoDescription(posts)
+		// filename := "studio/staging/resultwsound.mp4"
+		// youtube.YoutubeUpload(config, title, description, "25", "public", keywords, filename)
+		instagram.UploadInstagramVideo(config, posts)
 	}
-
-	// keywords := youtube.GetKeywords()
-	// title := youtube.GetVideoTitle()
-	// description := youtube.GetVideoDescription(posts)
-	// filename := "studio/staging/resultwsound.mp4"
-	// youtube.YoutubeUpload(config, title, description, "25", "public", keywords, filename)
-	instagram.UploadInstagramVideo(config, posts)
-
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/alfredosa/go-youtube-reddit-automation/utils"
 	"github.com/barthr/newsapi"
 	"github.com/charmbracelet/log"
 	"github.com/jmoiron/sqlx"
@@ -25,7 +26,7 @@ type DBPost struct {
 
 func GetPostByID(id string, db *sqlx.DB) (DBPost, error) {
 	var post DBPost
-	err := db.Get(&post, "SELECT full_id FROM posts WHERE full_id=$1", id)
+	err := db.Get(&post, "SELECT post_id FROM posts WHERE post_id=$1", id)
 	if err != nil {
 		return DBPost{}, err
 	}
@@ -35,12 +36,13 @@ func GetPostByID(id string, db *sqlx.DB) (DBPost, error) {
 func FilterPostedPosts(posts []newsapi.Article, db *sqlx.DB) []newsapi.Article {
 	var filteredPosts []newsapi.Article
 	for _, post := range posts {
-		_, err := GetPostByID(post.FullID, db)
+		postId := utils.StringToHex(post.Title)
+		_, err := GetPostByID(postId, db)
 		if err != nil {
-			log.Info("Post %s not found in DB, adding to filteredPosts", post.FullID)
+			log.Info("Post %s not found in DB, adding to filteredPosts", postId)
 			filteredPosts = append(filteredPosts, post)
 		} else {
-			log.Info("Post %s found in DB, skipping", post.FullID)
+			log.Info("Post %s found in DB, skipping", postId)
 		}
 	}
 
@@ -67,9 +69,10 @@ func InsertPostsFromReddit(posts []newsapi.Article, db *sqlx.DB) error {
 	sql := string(content)
 
 	for _, post := range posts {
-		_, err := db.Exec(sql, post.ID, post.FullID, post.Created.Time, post.Edited.Time, post.Permalink, post.URL, post.Title, post.Body, post.Likes, post.Score, post.UpvoteRatio, post.NumberOfComments, post.SubredditName, post.SubredditNamePrefixed, post.SubredditID, post.SubredditSubscribers, post.Author, post.AuthorID, post.Spoiler, post.Locked, post.NSFW, post.IsSelfPost, post.Saved, post.Stickied)
+		postId := utils.StringToHex(post.Title)
+		_, err := db.Exec(sql, postId, post.Source.ID, post.Source.Name, post.Author, post.Title, post.Description, post.URL, post.URLToImage, post.PublishedAt, post.Content)
 		if err != nil {
-			log.Error("Could not insert post", "post", post.FullID)
+			log.Error("Could not insert post", "post", postId)
 			return err
 		}
 	}
