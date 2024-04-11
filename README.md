@@ -1,8 +1,10 @@
-# Project Name
+# E2E Content Creation App
 
 ## Description
 
-A brief description of your project. What does it do? Who is it for?
+This project is a fully developed bot that extracts data from Reddit, the text is then used to get text-to-speech, and Images, and together with Video footage it creates a ready Video to be uploaded to Youtube and Instagram Automatically. No human interaction.
+
+![Video](example/resultwsound.mp4)
 
 ## Features
 
