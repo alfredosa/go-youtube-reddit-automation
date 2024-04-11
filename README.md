@@ -6,6 +6,8 @@ This project is a fully developed bot that extracts data from Reddit, the text i
 
 ![Video](example/resultwsound.mp4)
 
+Through a Postgresql, we track Reddit Posts. This allows us to see and use data for sentiment analysis down the line, and to be able to never upload Posts twice.
+
 ## Features
 
 - Feature 1: Pull all news of the day
