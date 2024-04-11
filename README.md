@@ -4,7 +4,7 @@
 
 This project is a fully developed bot that extracts data from Reddit, the text is then used to get text-to-speech, and Images, and together with Video footage it creates a ready Video to be uploaded to Youtube and Instagram Automatically. No human interaction.
 
-![Video](example/resultwsound.mp4)
+[![video](https://i.stack.imgur.com/Vp2cE.png)](example/resultwsound.mp4)
 
 Through a Postgresql, we track Reddit Posts. This allows us to see and use data for sentiment analysis down the line, and to be able to never upload Posts twice.
 
