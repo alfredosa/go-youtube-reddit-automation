@@ -1,5 +1,9 @@
 # E2E Content Creation App
 
+> [!WARNING]
+> This project is now officially migrated to https://git.alfie.news/go-youtube-reddit-automation
+> I will likely delete this sometime.
+
 ## Description
 
 This project is a fully developed bot that extracts data from Reddit, the text is then used to get text-to-speech, and Images, and together with Video footage it creates a ready Video to be uploaded to Youtube and Instagram Automatically. No human interaction.
